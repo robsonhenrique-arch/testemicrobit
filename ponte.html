@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ponte USB — micro:bit</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #101827;
+      color: white;
+      text-align: center;
+      padding: 24px;
+    }
+    button {
+      display: block;
+      width: 100%;
+      max-width: 340px;
+      margin: 14px auto;
+      padding: 16px;
+      border: 0;
+      border-radius: 10px;
+      font-size: 17px;
+    }
+    #status { color: #70e1c1; }
+  </style>
+</head>
+<body>
+  <h1>Conexão micro:bit</h1>
+  <p id="status">Conecte o micro:bit ao Chromebook pelo USB.</p>
+
+  <button id="conectar">1. Conectar micro:bit</button>
+  <button id="testar" disabled>2. Testar uma entrada</button>
+
+  <script>
+    let porta = null;
+    let gravador = null;
+
+    const status = document.getElementById("status");
+    const conectar = document.getElementById("conectar");
+    const testar = document.getElementById("testar");
+
+    conectar.onclick = async () => {
+      try {
+        if (!("serial" in navigator)) {
+          status.textContent =
+            "Este navegador não oferece Web Serial. Use o Chrome no Chromebook.";
+          return;
+        }
+
+        status.textContent = "Selecione o micro:bit na janela que abrir.";
+
+        porta = await navigator.serial.requestPort();
+        await porta.open({ baudRate: 115200 });
+
+        gravador = porta.writable.getWriter();
+
+        status.textContent = "micro:bit conectado!";
+        conectar.disabled = true;
+        testar.disabled = false;
+      } catch (erro) {
+        console.error(erro);
+        status.textContent =
+          "Não conectou. Confira o cabo USB e tente novamente.";
+      }
+    };
+
+    testar.onclick = async () => {
+      if (!gravador) return;
+
+      try {
+        await gravador.write(
+          new TextEncoder().encode("ENTRADA\n")
+        );
+        status.textContent =
+          "Comando enviado! Confira o LCD e a matriz de LEDs.";
+      } catch (erro) {
+        console.error(erro);
+        status.textContent = "Falha ao enviar o comando.";
+      }
+    };
+  </script>
+</body>
+</html>
